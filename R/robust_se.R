@@ -1,3 +1,4 @@
+#'@export
 robust_se <- function(model, cluster){
   M <- length(unique(cluster))
   N <- length(cluster)

@@ -10,6 +10,7 @@
 #' @param data A data.frame
 #'
 #' @return  A tibble containing all linear models, and data on what variables are included in each model.
+#' @export
 
 tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, print_summary = FALSE, data = .){
 
