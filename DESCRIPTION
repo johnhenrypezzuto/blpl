@@ -1,0 +1,18 @@
+Package: blpl
+Title: Betsy Levy Paluck Lab
+Version: 0.1.0
+Authors@R: person("John-Henry", "Pezzuto", email = "johnhenrypezzuto@gmail.com", role = c("aut", "cre"))
+Description: Convenient functions for experimental psychology.
+Depends: R (>= 3.5.0)
+Imports:
+    broom,
+    dplyr,
+    estimatr,
+    lmtest,
+    purrr,
+    sandwich,
+    stringr
+License: GPL-3 | file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
