@@ -23,7 +23,7 @@ tidy_lm(dv, terms, style = "default", treatment = NULL,
 \item{data}{A data.frame}
 }
 \value{
-A tibble containing all models, and data on what variables are included in each model
+A tibble containing all linear models, and data on what variables are included in each model.
 }
 \description{
 A function to streamline the process of running regressions in experimental psychology
