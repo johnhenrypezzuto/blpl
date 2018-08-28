@@ -12,18 +12,26 @@ tidy_lm(dv, terms, style = "default", treatment = NULL,
 
 \item{terms}{Vector of terms to regress on dv.}
 
-\item{style}{Character string either "default", "incremental", or "single". In what way should the terms regress on dv. "default" uses all terms at once on all the DVs. "incremental" starts off with one term and adds one more term each model for each dv. "single" uses all terms individually on each dv.}
+\item{style}{Character string either "default", "incremental", "chord", or "bivariate". In what way should the terms regress on dv.
+\itemize{
+\item "default" uses all terms at once on all the DVs.
+\item "incremental" starts off with one term and adds one more term each model for each dv.
+\item "chord" begins by running a bivariate regressions the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms.
+Lastly, all terms are ran together.
+\item "bivariate" uses all terms individually on each dv.
+}}
 
-\item{treatment}{Vector for terms to include in the output dataset. Will return coefficent, p value, and SE.}
+\item{treatment}{Vector for terms to include in the output dataset. Returns coefficent, lower confidence interval,
+upper confidence interval, standard error, t-value, and p-value.}
 
 \item{clusters}{Clusters for grouping standard error.}
 
 \item{print_summary}{Boolean whether to print model summaries or not. Default is FALSE.}
 
-\item{data}{A data.frame}
+\item{data}{A \code{data.frame}}
 }
 \value{
-A tibble containing all linear models, and data on what variables are included in each model.
+A \code{tibble} containing all linear models, and data on what variables are included in each model.
 }
 \description{
 A function to streamline the process of running regressions in experimental psychology

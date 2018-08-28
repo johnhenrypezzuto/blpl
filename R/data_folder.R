@@ -6,7 +6,6 @@
 #' @param ws Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.
 #' @examples
 #' read.csv(data_folder("mydataset.csv"))
-#' @export
 data_folder <- function(dataset = "", data_folder = "",  ws = FALSE){
   # get root directory
   wd <- getwd()
