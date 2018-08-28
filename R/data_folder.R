@@ -13,6 +13,7 @@ data_folder <- function(data = "", folder = "",  ws = FALSE){
   slashes <- stringr::str_locate_all(getwd(), "/")
   last_slash <- slashes[[1]][nrow(slashes[[1]]), 1]
   root_folder <- substr(wd, 1, last_slash)
+  new_folder <- folder
 
     # handle white space
   if (stringr::str_length(folder) != 0){
@@ -54,5 +55,5 @@ data_folder <- function(data = "", folder = "",  ws = FALSE){
   if ((length(list.files(new_folder)) < 1) & (stringr::str_length(data) == 0)){
     warning("Data folder may be empty or misnamed. Proceed Carefully")
   }
-  return(new_folder_data)
+  new_folder_data
 }
