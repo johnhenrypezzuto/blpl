@@ -7,7 +7,7 @@
 #' Character string either "default", "incremental", "chord", or "bivariate". In what way should the terms regress on dv.
 #'  *  "default" uses all terms at once on all the DVs.
 #' * "incremental" starts off with one term and adds one more term each model for each dv.
-#' * "chord" begins by running a bivariate regressions the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms.
+#' * "chord" begins by running a bivariate regression the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms.
 #' Lastly, all terms are ran together.
 #' * "bivariate" uses all terms individually on each dv.
 #' @param treatment Vector for terms to include in the output dataset. Returns coefficent, lower confidence interval,
