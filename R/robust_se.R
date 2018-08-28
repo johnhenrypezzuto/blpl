@@ -1,3 +1,4 @@
+#' Robust Standard Error
 #' @export
 #' @param model
 #' @param cluster What variable should the data be clustered by

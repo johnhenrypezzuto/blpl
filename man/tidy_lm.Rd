@@ -16,7 +16,7 @@ tidy_lm(dv, terms, style = "default", treatment = NULL,
 \itemize{
 \item "default" uses all terms at once on all the DVs.
 \item "incremental" starts off with one term and adds one more term each model for each dv.
-\item "chord" begins by running a bivariate regressions the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms.
+\item "chord" begins by running a bivariate regression the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms.
 Lastly, all terms are ran together.
 \item "bivariate" uses all terms individually on each dv.
 }}
