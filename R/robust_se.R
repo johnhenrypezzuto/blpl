@@ -1,3 +1,6 @@
+#' @export
+#' @param model
+#' @param cluster What variable should the data be clustered by
 robust_se <- function(model, cluster){
   M <- length(unique(cluster))
   N <- length(cluster)

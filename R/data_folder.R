@@ -4,6 +4,7 @@
 #' @param dataset The name of the dataset to load as string.
 #' @param datafolder The name where the dataset is stored one directory back. Directories "Data", "data", "dataset", "datasets" are checked automatically.
 #' @param ws Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.
+#' @export
 #' @examples
 #' read.csv(data_folder("mydataset.csv"))
 data_folder <- function(dataset = "", data_folder = "",  ws = FALSE){

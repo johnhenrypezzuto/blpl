@@ -15,7 +15,7 @@
 #' @param clusters Clusters for grouping standard error.
 #' @param print_summary Boolean whether to print model summaries or not. Default is FALSE.
 #' @param data A `data.frame`
-#'
+#' @export
 #' @return  A `tibble` containing all linear models, and data on what variables are included in each model.
 
 tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, print_summary = FALSE, data = .){
