@@ -163,6 +163,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
   ### Final Column - estimatr::lm_robust model
   loopnum = 0
   restart = 0
+  j = 1
   z = 1
   if (style == "incremental"){
     for (j in dv){
@@ -212,7 +213,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
       if(print_summary == TRUE){
         tidy_summaries()
       }
-    }
+
     for (z in term_loop){
       loopnum = loopnum + 1
       i = paste(terms[1], " + ", z)
@@ -235,7 +236,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
         if(print_summary == TRUE){
           tidy_summaries()
         }
-
+       }
       }
     }
   } else if (style == "default"){
