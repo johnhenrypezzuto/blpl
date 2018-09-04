@@ -9,6 +9,7 @@ Imports:
     dplyr,
     estimatr,
     lmtest,
+    multiwayvcov,
     purrr,
     sandwich,
     stringr

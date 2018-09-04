@@ -13,12 +13,13 @@
 #' @param treatment Vector for terms to include in the output dataset. Returns coefficent, lower confidence interval,
 #' upper confidence interval, standard error, t-value, and p-value.
 #' @param clusters Clusters for grouping standard error.
-#' @param print_summary Boolean whether to print model summaries or not. Default is FALSE.
+#' @param robust_se TRUE/FALSE. Whether to use to use robust standard errors ("HC2"). Equivalent to default standard error from lm_robust(). Set to FALSE by default.
+#' @param print_summary TRUE/FALSE. Whether to print model summaries or not. Default is FALSE.
 #' @param data A `data.frame`
 #' @export
 #' @return  A `tibble` containing all linear models, and data on what variables are included in each model.
 
-tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, print_summary = FALSE, data = .){
+tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, print_summary = FALSE, data = .){
 
   # Check Inputs
   ## Check DV Variables
@@ -41,15 +42,23 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     }
   }
 
+
+  # SE standard
+  standard_error = "classical"
+  cluster = NULL
+  cluster_data <- NULL
+
+
+  ## robust se
+  if (robust_se == TRUE) {
+    standard_error = "HC2"
+  }
+
   ## assign standard error type, and ready cluster to be printed
   if (is.null(clusters) == FALSE) {
     standard_error = "stata"
     cluster = paste0(", clusters = ", clusters)
     cluster_data <- data[, clusters]
-  } else {
-    standard_error = "classical"
-    cluster = NULL
-    cluster_data <- NULL
   }
 
   ## check that treatment is in terms
@@ -256,6 +265,12 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
 
   # Replace 0 with NA
   results[results == "0"] <- NA_real_
+
+  ## include clusters column if clusters exist (necessary for star_ready)
+  if (is.null(clusters) == FALSE) {
+    try(results$clusters <- clusters, silent = TRUE)
+    results <- results %>% dplyr::select(1:(2 + l), clusters, lm)
+  }
 
   # Extract Treatment Info
   i = 1
