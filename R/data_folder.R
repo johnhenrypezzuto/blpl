@@ -7,7 +7,9 @@
 #' @export
 #' @examples
 #' read.csv(folder("mydataset.csv"))
+
 data_folder <- function(data = "", folder = "",  ws = FALSE){
+
   # get root directory
   wd <- getwd()
   slashes <- stringr::str_locate_all(getwd(), "/")
@@ -50,7 +52,12 @@ data_folder <- function(data = "", folder = "",  ws = FALSE){
   }
 
   #append folder name
-  new_folder_data <- stringr::str_c(new_folder, data, sep = "/")
+  if (stringr::str_length(data) == 0){
+  new_folder_data <- new_folder
+  } else {
+    new_folder_data <- stringr::str_c(new_folder, data, sep = "/")
+  }
+
   # warning if empty directory
   if ((length(list.files(new_folder)) < 1) & (stringr::str_length(data) == 0)){
     warning("Data folder may be empty or misnamed. Proceed Carefully \n")
