@@ -1,20 +1,38 @@
 #' Data Folder
 #'
-#' A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Most likely nested inside the function read.csv() or read_csv().
+#' A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Assumes the data is going to be one folder behind the current directory. Most likely nested inside the function read.csv() or read_csv().
 #' @param data The name of the dataset to load as string.
 #' @param folder The name where the dataset is stored one directory back. Directories "Data", "data", "dataset", "datasets" are checked automatically.
+#' @param steps_back An integer labeling how many steps back from your current wd is the data folder located? Set to 1 by default.
 #' @param ws Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.
 #' @export
 #' @examples
 #' read.csv(folder("mydataset.csv"))
 
-data_folder <- function(data = "", folder = "",  ws = FALSE){
+data_folder <- function(data = "", folder = "", steps_back = 1, ws = FALSE){
+
+  # prepare steps_back
+  if (!is.numeric(steps_back)){
+    stop("steps_back needs to be an integer!")
+
+  } else if (steps_back < 0){
+    steps_back <- abs(steps_back)
+      }
+  steps_back <- steps_back - 1
+
 
   # get root directory
   wd <- getwd()
+  if (steps_back == -1){
+    root_folder = wd
+  } else {
   slashes <- stringr::str_locate_all(getwd(), "/")
-  last_slash <- slashes[[1]][nrow(slashes[[1]]), 1]
+      if (steps_back > nrow(slashes[[1]])){
+        stop("Can't take that many steps back!")
+       }
+  last_slash <- slashes[[1]][nrow(slashes[[1]]) - steps_back, 1]
   root_folder <- substr(wd, 1, last_slash)
+    }
   new_folder <- stringr::str_c(root_folder, folder)
 
     # handle white space

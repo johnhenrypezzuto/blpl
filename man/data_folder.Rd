@@ -4,17 +4,19 @@
 \alias{data_folder}
 \title{Data Folder}
 \usage{
-data_folder(data = "", folder = "", ws = FALSE)
+data_folder(data = "", folder = "", steps_back = 1, ws = FALSE)
 }
 \arguments{
 \item{data}{The name of the dataset to load as string.}
 
 \item{folder}{The name where the dataset is stored one directory back. Directories "Data", "data", "dataset", "datasets" are checked automatically.}
 
+\item{steps_back}{An integer labeling how many steps back from your current wd is the data folder located? Set to 1 by default.}
+
 \item{ws}{Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.}
 }
 \description{
-A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Most likely nested inside the function read.csv() or read_csv().
+A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Assumes the data is going to be one folder behind the current directory. Most likely nested inside the function read.csv() or read_csv().
 }
 \examples{
 read.csv(folder("mydataset.csv"))
