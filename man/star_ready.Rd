@@ -8,7 +8,7 @@ Prepares output from \code{tidy_lm} for use with the package stargazer}
 star_ready(tidy_lm_df, data = .)
 }
 \arguments{
-\item{tidy_lm_df}{A \code{tibble} from the \code{tidy_lm} function. No columns can be missing. DEVELOPER WARNING: any rows starting with var_ besides the term rows in the beginning before the lm will likely cause errors.}
+\item{tidy_lm_df}{A \code{tibble} from the \code{tidy_lm} function. No columns can be missing or out of the original order. Rows can be appended so long as they use the same data.}
 
 \item{data}{Dataframe with corresponding data that was used in the tidy_lm function.}
 }

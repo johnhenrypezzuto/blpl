@@ -14,12 +14,13 @@
 #' upper confidence interval, standard error, t-value, and p-value.
 #' @param clusters Clusters for grouping standard error.
 #' @param robust_se TRUE/FALSE. Whether to use to use robust standard errors ("HC2"). Equivalent to default standard error from lm_robust(). Set to FALSE by default.
+#' @param alpha Numeric p-value for the standard errors. Default .05.
 #' @param print_summary TRUE/FALSE. Whether to print model summaries or not. Default is FALSE.
 #' @param data A `data.frame`
 #' @export
 #' @return  A `tibble` containing all linear models, and data on what variables are included in each model.
 
-tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, print_summary = FALSE, data = .){
+tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE, data = .){
 
   # Check Inputs
   ## Check DV Variables
@@ -40,6 +41,17 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     if (class(test) == "try-error"){
       stop("'", i, "'", " is not a variable in the dataset")
     }
+  }
+
+  # alpha level
+  if (is.numeric(alpha) == FALSE){
+    stop("alpha needs to be numeric")
+  }
+
+  if (alpha != .05){
+    alpha_print = paste0(", alpha = ", alpha)
+  } else {
+    alpha_print = NULL
   }
 
 
@@ -72,10 +84,26 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     stop("Style must be 'incremental', 'bivariate', 'chord', or 'default'")
   }
 
+  # lm function
+  lm_function <- function(){
+    data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
+                                        data = data,
+                                        alpha = alpha,
+                                        clusters =  cluster_data,
+                                        se_type = standard_error))
+  }
+
+  # get df name
+  data_name <-deparse(substitute(data))
+
+
   # Tidy Summaries (if print_summary = TRUE)
   tidy_summaries <- function(){
     cat("\n#", loopnum, "-------------------------------------------------- ")
-    cat(paste0("\nlm_robust(", j, " ~ ", i, cluster, ", se_type = \"", standard_error,  "\")\n"))
+    cat(paste0("\nlm_robust(", j, " ~ ", i, cluster,
+               alpha_print,
+               ", se_type = \"", standard_error,
+               "\", data = ", data_name, ")\n"))
     working_sum <- summary(results[loopnum, ncol(results)][[1]][[1]])
     cat(paste0("N = ", working_sum$N, "\n"))
     print(working_sum$coefficients)
@@ -186,10 +214,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
         } else {
           i <- stringr::str_c(i, i_working, sep = " + ")
         }
-        results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                               data = data,
-                                                                               clusters =  cluster_data,
-                                                                               se_type = standard_error))
+        results[loopnum, ncol(results)] <- lm_function()
         if(print_summary == TRUE){
           tidy_summaries()
         }
@@ -199,10 +224,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     for (j in dv){
       for (i in terms){
         loopnum = loopnum + 1
-        results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                               data = data,
-                                                                               clusters = cluster_data,
-                                                                               se_type = standard_error))
+        results[loopnum, ncol(results)] <- lm_function()
 
         if(print_summary == TRUE){
           tidy_summaries()
@@ -214,10 +236,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     for (j in dv){
       loopnum = loopnum + 1
       i = paste(terms[1])
-      results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                             data = data,
-                                                                             clusters = cluster_data,
-                                                                             se_type = standard_error))
+      results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary == TRUE){
         tidy_summaries()
@@ -226,10 +245,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     for (z in term_loop){
       loopnum = loopnum + 1
       i = paste(terms[1], " + ", z)
-      results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                             data = data,
-                                                                             clusters = cluster_data,
-                                                                             se_type = standard_error))
+      results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary == TRUE){
         tidy_summaries()
@@ -237,11 +253,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
       if (z == tail(term_loop, n = 1)){
         loopnum = loopnum + 1
         i <- paste(terms, collapse = " + ")
-        results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                               data = data,
-                                                                               clusters = cluster_data,
-                                                                               se_type = standard_error))
-
+        results[loopnum, ncol(results)] <- lm_function()
         if(print_summary == TRUE){
           tidy_summaries()
         }
@@ -252,10 +264,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     i <- paste(terms,collapse=" + ")
     for (j in dv){
       loopnum = loopnum + 1
-      results[loopnum, ncol(results)] <- data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
-                                                                             data = data,
-                                                                             clusters = cluster_data,
-                                                                             se_type = standard_error))
+      results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary == TRUE){
         tidy_summaries()

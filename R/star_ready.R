@@ -1,7 +1,7 @@
 #' Star Ready
 #' Prepares output from `tidy_lm` for use with the package stargazer
 #'
-#' @param tidy_lm_df A `tibble` from the `tidy_lm` function. No columns can be missing. DEVELOPER WARNING: any rows starting with var_ besides the term rows in the beginning before the lm will likely cause errors.
+#' @param tidy_lm_df A `tibble` from the `tidy_lm` function. No columns can be missing or out of the original order. Rows can be appended so long as they use the same data.
 #' @param data Dataframe with corresponding data that was used in the tidy_lm function.
 #' @export
 #' @return Returns a tibble with all lms that can be directly used with stargazer.

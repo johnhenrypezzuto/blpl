@@ -5,8 +5,8 @@
 \title{tidy_lm}
 \usage{
 tidy_lm(dv, terms, style = "default", treatment = NULL,
-  clusters = NULL, robust_se = FALSE, print_summary = FALSE,
-  data = .)
+  clusters = NULL, robust_se = FALSE, alpha = 0.05,
+  print_summary = FALSE, data = .)
 }
 \arguments{
 \item{dv}{Vector of one or more dependent variables. The function will regress all the terms on each dv separately}
@@ -28,6 +28,8 @@ upper confidence interval, standard error, t-value, and p-value.}
 \item{clusters}{Clusters for grouping standard error.}
 
 \item{robust_se}{TRUE/FALSE. Whether to use to use robust standard errors ("HC2"). Equivalent to default standard error from lm_robust(). Set to FALSE by default.}
+
+\item{alpha}{Numeric p-value for the standard errors. Default .05.}
 
 \item{print_summary}{TRUE/FALSE. Whether to print model summaries or not. Default is FALSE.}
 
