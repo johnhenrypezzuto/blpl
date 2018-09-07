@@ -23,6 +23,7 @@ star_ready <- function(tidy_lm_df, data = .){
   results <- matrix(0, nrow(tidy_lm_df), 1)
   results <- as_tibble(results)
   colnames(results) <- "lm"
+  results$lm <- as.list(results$lm)
 
   ## fill with lm
   z = 1
@@ -32,14 +33,14 @@ star_ready <- function(tidy_lm_df, data = .){
     terms <- tidy_lm_short[z,2:ncol(tidy_lm_short)]
     i <- paste(terms,collapse=" + ")
     i <- str_remove_all(i, " \\+ NA")
-    i
-    results[z,1] <- data %>% do(y = lm(as.formula(paste(j, "~", i)), data = data))
+    results[z,1] <- data %>% do(y = lm(paste(j, "~", i), data = data))
   }
   output <- results
 
 
+  # give models new SE based on se_type
   z = 1
-  for (z in nrow(results)){
+  for (z in 1:nrow(results)){
     if(tidy_lm_df["lm"][[1]][[z]]$se_type == "classical") {
     }
     if(tidy_lm_df["lm"][[1]][[z]]$se_type == "stata") {
@@ -47,10 +48,9 @@ star_ready <- function(tidy_lm_df, data = .){
       output[z, 1] <- obj
     }
     if(tidy_lm_df["lm"][[1]][[z]]$se_type == "HC2") {
-      obj <- tribble(~model, lmtest::coeftest(results[i,"lm"][[1]][[1]],
-                                              vcov = sandwich::vcovHC(results[i,"lm"][[1]][[1]], "HC2")))
-
-      output[i, 1] <- obj
+      obj <- tribble(~model, lmtest::coeftest(results[z,"lm"][[1]][[1]],
+                                              vcov = sandwich::vcovHC(results[z,"lm"][[1]][[1]], "HC2")))
+      output[z, 1] <- obj
     }
   }
   output <- output[[1]]
