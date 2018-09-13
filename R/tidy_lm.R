@@ -20,9 +20,53 @@
 #' @export
 #' @return  A `tibble` containing all linear models, and data on what variables are included in each model.
 
-tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE, data = .){
+tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE){
+
+  # Tidy eval workaround
+  ## function for cleaning vectors
+  quote_machine <- function(vector){
+    if(str_sub(vector[2], 1, 2) != "c("){
+      x2 <- vector[2]
+    } else {
+      x2 <- trimws(stringr::str_split(stringr::str_sub(vector[2], 3, -2), ",")[[1]])
+    }
+    x3 <-
+      x2 %>%
+      dplyr::as_tibble() %>%
+      mutate(value = ifelse(stringr::str_detect(x2, "\"") == TRUE, str_remove_all(value, "\""), value)) %>%
+      as_vector() %>%
+      unname()
+    x3
+  }
+
+  ## Run through function if necessary
+  test <- try(length(dv), silent = TRUE)
+  if (class(test) == "try-error"){
+    dv <- as.character(friendlyeval::treat_input_as_expr(dv))
+    dv <- quote_machine(dv)
+  }
+  test <- try(length(terms), silent = TRUE)
+  if (class(test) == "try-error"){
+    terms <- as.character(friendlyeval::treat_input_as_expr(terms))
+    terms <- quote_machine(terms)
+  }
+  test <- try(length(treatment), silent = TRUE)
+  if (class(test) == "try-error"){
+    treatment <- as.character(friendlyeval::treat_input_as_expr(treatment))
+    treatment <- quote_machine(treatment)
+  }
+
+
+
+
 
   # Check Inputs
+  ## Check Style
+  if (style == "incremental" | style == "bivariate" || style == "default" || style == "chord") {
+  } else {
+    stop("Style must be 'incremental', 'bivariate', 'chord', or 'default'")
+  }
+
   ## Check DV Variables
   for(i in 1:length(dv)) {
     test <- try(data[,dv[i]])
@@ -68,21 +112,23 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
 
   ## assign standard error type, and ready cluster to be printed
   if (is.null(clusters) == FALSE) {
+    clusters <- as.character(friendlyeval::treat_input_as_expr(clusters))
+    clusters <- quote_machine(clusters)
     standard_error = "stata"
     cluster = paste0(", clusters = ", clusters)
     cluster_data <- data[, clusters]
   }
 
   ## check that treatment is in terms
-  if (length(treatment) != sum(treatment %in% terms)){
-    stop("'", treatment[which((treatment %in% terms) == FALSE)], "'", " is included as a treatment, but not included as a term")
+  if(style != "default"){
+    if (length(treatment) != sum(treatment %in% terms)){
+      stop("'", treatment[which((treatment %in% terms) == FALSE)], "'", " is included as a treatment, but not included as a term")
+    }
+  } else if (style == "default"){
+    unique_terms <- dplyr::setdiff(treatment, terms)
   }
 
-  ## Check Style
-  if (style == "incremental" | style == "bivariate" || style == "default" || style == "chord") {
-  } else {
-    stop("Style must be 'incremental', 'bivariate', 'chord', or 'default'")
-  }
+
 
   # lm function
   lm_function <- function(){
@@ -123,8 +169,13 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
     t = length(terms)
     l = 1  # length t in expanded version (didn't double check)
   } else if (style == "default"){
-    t = 1
-    l = length(terms)
+    if (length(unique_terms) == 0){
+      t = 1
+      l = length(terms)
+    } else if (length(unique_terms) != 0){ ##### edit here for expansion
+      t = length(unique_terms)
+      l = length(terms) + 1
+    }
   } else if (style == "chord"){
     t = length(terms) + 1
     l = t - 1
@@ -133,7 +184,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
 
 
   ## Create Empty Matrix
-  results = matrix(0, t*length(dv), 3 + l)
+  results <- matrix(0, t*length(dv), 3 + l)
 
   ## Fill Matrix
   ### Row 1 (model number)
@@ -154,9 +205,16 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
       results[((i*length(terms)) - (length(terms) - i)):((i*length(terms)) + i), 2] <- rep(dv[i], (nrow(results)/length(dv)))
     }
   } else if (style == "default"){
-    for(i in i:length(dv)){
-      results[i, 2] <- rep(dv[i], nrow(results)/length(dv))
+    if (length(unique_terms) == 0){
+      for(i in i:length(dv)){
+        results[i, 2] <- rep(dv[i], nrow(results)/length(dv))
+      }
+    } else if (length(unique_terms) != 0){
+      for(i in i:length(dv)){
+        results[((i * length(unique_terms)) - (length(unique_terms) - 1)):(i * length(unique_terms)), 2] <- rep(dv[i], nrow(results)/length(dv))
+      }
     }
+
   }
 
   ### Column 3 : n terms
@@ -185,6 +243,13 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
   } else if (style == "default"){
     for(i in i:length(terms)){
       results[ , 2 + i] <- rep(terms[i], nrow(results))
+    }
+    if (length(unique_terms) != 0){
+      i = 1
+      for(i in i:length(unique_terms)){
+        results[seq(i, nrow(results), by = length(unique_terms)), length(terms) + 3] <-
+          rep(unique_terms[i], length(seq(i, nrow(results), by = length(unique_terms))))
+      }
     }
   }
 
@@ -242,28 +307,31 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
         tidy_summaries()
       }
 
-    for (z in term_loop){
-      loopnum = loopnum + 1
-      i = paste(terms[1], " + ", z)
-      results[loopnum, ncol(results)] <- lm_function()
-
-      if(print_summary == TRUE){
-        tidy_summaries()
-      }
-      if (z == tail(term_loop, n = 1)){
+      for (z in term_loop){
         loopnum = loopnum + 1
-        i <- paste(terms, collapse = " + ")
+        i = paste(terms[1], " + ", z)
         results[loopnum, ncol(results)] <- lm_function()
+
         if(print_summary == TRUE){
           tidy_summaries()
         }
-       }
+        if (z == tail(term_loop, n = 1)){
+          loopnum = loopnum + 1
+          i <- paste(terms, collapse = " + ")
+          results[loopnum, ncol(results)] <- lm_function()
+          if(print_summary == TRUE){
+            tidy_summaries()
+          }
+        }
       }
     }
   } else if (style == "default"){
-    i <- paste(terms,collapse=" + ")
-    for (j in dv){
+    full_terms <- results[,3:(ncol(results)-1)]
+
+    for (z in 1:nrow(results)){
       loopnum = loopnum + 1
+      j <- as.character(results[z,2])
+      i <- paste(full_terms[z,], collapse=" + ")
       results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary == TRUE){
@@ -290,7 +358,7 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
       nam_coef <- paste(treatment[i], "coef",sep = "_")
       results[, nam_coef] <- NA_real_
 
-      nam_ci_low <- paste(treatment[i], "ci_low",sep = "_")
+      nam_ci_low <- paste(treatment[i], "ci_lower",sep = "_")
       results[, nam_ci_low] <- NA_real_
 
       nam_ci_upper <- paste(treatment[i], "ci_upper",sep = "_")
@@ -337,3 +405,5 @@ tidy_lm <- function(dv, terms, style = "default", treatment = NULL, clusters = N
 
   results
 }
+
+
