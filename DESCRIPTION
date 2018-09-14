@@ -8,6 +8,7 @@ Imports:
     broom,
     dplyr,
     estimatr,
+    friendlyeval,
     lmtest,
     multiwayvcov,
     purrr,
