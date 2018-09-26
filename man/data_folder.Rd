@@ -4,10 +4,10 @@
 \alias{data_folder}
 \title{Data Folder}
 \usage{
-data_folder(data = "", folder = "", steps_back = 1, ws = FALSE)
+data_folder(file = "", folder = "", steps_back = 1, ws = FALSE)
 }
 \arguments{
-\item{data}{The name of the dataset to load as string.}
+\item{file}{The name of the dataset to load as string.}
 
 \item{folder}{The name where the dataset is stored one directory back. Directories "Data", "data", "dataset", "datasets" are checked automatically.}
 

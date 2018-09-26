@@ -1,7 +1,7 @@
 #' Data Folder
 #'
 #' A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Assumes the data is going to be one folder behind the current directory. Most likely nested inside the function read.csv() or read_csv().
-#' @param data The name of the dataset to load as string.
+#' @param file The name of the dataset to load as string.
 #' @param folder The name where the dataset is stored one directory back. Directories "Data", "data", "dataset", "datasets" are checked automatically.
 #' @param steps_back An integer labeling how many steps back from your current wd is the data folder located? Set to 1 by default.
 #' @param ws Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.
@@ -9,7 +9,7 @@
 #' @examples
 #' read.csv(folder("mydataset.csv"))
 
-data_folder <- function(data = "", folder = "", steps_back = 1, ws = FALSE){
+data_folder <- function(file = "", folder = "", steps_back = 1, ws = FALSE){
 
   # prepare steps_back
   if (!is.numeric(steps_back)){
@@ -45,11 +45,11 @@ data_folder <- function(data = "", folder = "", steps_back = 1, ws = FALSE){
   }
 
   # handle dataset direct input
-  if (stringr::str_length(data) > 0){
-    if (stringr::str_detect(data, "\\.") == FALSE){
-      stop("The dataset inputted does not contain .csv, .dta, or other data extensions")
-    }
-  }
+  # if (stringr::str_length(data) > 0){
+  #   if (stringr::str_detect(data, "\\.") == FALSE){
+  #     stop("The dataset inputted does not contain .csv, .dta, or other data extensions")
+  #   }
+  # }
 
   # handle empty input
   if (stringr::str_length(folder) == 0){
