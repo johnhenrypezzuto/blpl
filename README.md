@@ -1,5 +1,5 @@
 # blpl
-Betsy Levy Paluck R Lab Package
+Betsy Levy Paluck Lab R Package
 
 
 To install:
