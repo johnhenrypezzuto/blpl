@@ -162,6 +162,12 @@ add_endnote <- function(table,  note, size_in_inches = 6, rm.stargazer.stars = T
   placement <- which(stringr::str_detect(table, "\\\\end\\{tabular\\}"))
   table[placement] <- stringr::str_c(table[placement],"\\begin{tabular}{  p{", size_in_inches, "in} }",
                                      "\\footnotesize{", note, "}", "\\end{tabular}")
+  if (length(placement) == 0){
+    placement <- which(stringr::str_detect(table, "\\\\end\\{table\\}"))
+    table[placement] <- stringr::str_c("\\begin{tabular}{  p{", size_in_inches, "in} }",
+                                       "\\footnotesize{", note, "}", "\\end{tabular}", table[placement])
+  }
+
 
   table
 }
@@ -232,3 +238,32 @@ stargazer_rowname <- function(table, row_name, row_number){
 print_table <- function(latex_table){
   cat(paste(latex_table, collapse = "\n"))
 }
+
+
+#' Kable Resize
+#'
+#'An option for when `kable_styling(full_width = F, latex_options = "scale_down")` isn't enough. This function depends on you already attempting to resize using the aforementioned function.
+#' When using with endnotes, I recommend to use this function with `kableExtra`'s built in, so that the resize corrosponds with the table
+#'footnote function
+#' @param table
+#' @param resizebox
+#' @param minipage
+#'
+#' @return
+#' @export
+#'
+#' @examples
+kable_resize <- function(table, resizebox = .8, minipage = 1){
+  placement <- stringr::str_detect(table,"\\\\resizebox\\{")
+  table[placement] <- stringr::str_c("\\resizebox{", resizebox, "\\linewidth}{!}{ \\begin{minipage}{", minipage, "\\linewidth}")
+
+  # close minipage
+  ending <- which(stringr::str_detect(table, "\\\\end\\{tabular\\}"))
+  table[ending] <- stringr::str_remove(table5_rough[ending], "\\}") # take out resize curly bracket
+  table[ending] <- stringr::str_c(table[ending], "\\end{minipage}}") # close minipage, and reinstate curly bracket
+
+  table
+}
+
+
+

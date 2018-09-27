@@ -1,3 +1,15 @@
+#' Standardized Result
+#'
+#' @param eff.type
+#' @param u.s.d
+#' @param ctrl.sd
+#' @param n.t
+#' @param n.c
+#'
+#' @return
+#' @export
+#'
+#' @examples
 stand.result <- function( eff.type , u.s.d , ctrl.sd , n.t, n.c){
   ## All calculations taken from Cooper, Hedges, and Valentine (2009)
 
