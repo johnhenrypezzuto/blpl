@@ -7,7 +7,7 @@
 #' @param ws Should there be white space is preceding or trailing the name of the datafolder? Defaults to FALSE.
 #' @export
 #' @examples
-#' read.csv(folder("mydataset.csv"))
+#' read.csv(data_folder("mydataset.csv"))
 
 data_folder <- function(file = "", folder = "", steps_back = 1, ws = FALSE){
 
@@ -70,14 +70,14 @@ data_folder <- function(file = "", folder = "", steps_back = 1, ws = FALSE){
   }
 
   #append folder name
-  if (stringr::str_length(data) == 0){
+  if (stringr::str_length(file) == 0){
   new_folder_data <- new_folder
   } else {
-    new_folder_data <- stringr::str_c(new_folder, data, sep = "/")
+    new_folder_data <- stringr::str_c(new_folder, file, sep = "/")
   }
 
   # warning if empty directory
-  if ((length(list.files(new_folder)) < 1) & (stringr::str_length(data) == 0)){
+  if ((length(list.files(new_folder)) < 1) & (stringr::str_length(file) == 0)){
     warning("Data folder may be empty or misnamed. Proceed Carefully \n")
   }
   new_folder_data
