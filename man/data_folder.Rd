@@ -19,5 +19,5 @@ data_folder(file = "", folder = "", steps_back = 1, ws = FALSE)
 A function so that users don't need to change where data is loaded from when multiple users are working on a single project. Assumes the data is going to be one folder behind the current directory. Most likely nested inside the function read.csv() or read_csv().
 }
 \examples{
-read.csv(folder("mydataset.csv"))
+read.csv(data_folder("mydataset.csv"))
 }

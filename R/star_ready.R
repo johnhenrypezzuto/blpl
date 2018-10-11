@@ -15,13 +15,14 @@ star_ready <- function(tidy_lm_df, data = .){
     return(coef)   # return coef test
   }
 
-
   ## shrink tidy df
-  tidy_lm_short <- tidy_lm_df %>% select(dv, starts_with("var_"))
+  tidy_lm_short <- tidy_lm_df %>%
+    dplyr::select(1:"dv") %>%
+    dplyr::select(dv, dplyr::starts_with("var_"))
 
   ## Create Empty Tibble
   results <- matrix(0, nrow(tidy_lm_df), 1)
-  results <- as_tibble(results)
+  results <- dplyr::as_tibble(results)
   colnames(results) <- "lm"
   results$lm <- as.list(results$lm)
 
@@ -31,7 +32,7 @@ star_ready <- function(tidy_lm_df, data = .){
     j <- tidy_lm_short$dv[z]
     terms <- tidy_lm_short[z,2:ncol(tidy_lm_short)]
     i <- paste(terms,collapse=" + ")
-    i <- str_remove_all(i, " \\+ NA")
+    i <- stringr::str_remove_all(i, " \\+ NA")
     results[z,1] <- data %>% do(y = lm(paste(j, "~", i), data = data))
     results$lm[[z]]$call[[2]][2] <- tidy_lm_df$dv[z] # fix dv
   }
@@ -44,7 +45,7 @@ star_ready <- function(tidy_lm_df, data = .){
       #output$lm[[z]]$call[[2]][2] <- tidy_lm_df$dv[z] # fix dv
     }
     if(tidy_lm_df["lm"][[1]][[z]]$se_type == "stata") {
-      obj <- tribble(~model, cluster_fun(results[z, "lm"][[1]][[1]], cluster = data[,tidy_lm_df$clusters[z]]))
+      obj <- dplyr::tribble(~model, cluster_fun(results[z, "lm"][[1]][[1]], cluster = data[,tidy_lm_df$clusters[z]]))
       output[z, 1] <- obj
       #
       # output[z, 1] <- data %>% do(y = list(model = obj,
@@ -53,7 +54,7 @@ star_ready <- function(tidy_lm_df, data = .){
       #output$lm[[1]]$call[[2]][2] <- tidy_lm_df$dv[z] need to get dvs automatically
     }
     if(tidy_lm_df["lm"][[1]][[z]]$se_type == "HC2") {
-      obj <- tribble(~model, lmtest::coeftest(results[z,"lm"][[1]][[1]],
+      obj <- dplyr::tribble(~model, lmtest::coeftest(results[z,"lm"][[1]][[1]],
                                               vcov = sandwich::vcovHC(results[z,"lm"][[1]][[1]], "HC2")))
       output[z, 1] <- obj
     }
