@@ -1,4 +1,15 @@
 
+#' Lasso Regression
+#'
+#' @param dataset
+#' @param dv
+#' @param startpred
+#' @param const
+#'
+#' @return
+#' @export
+#'
+#' @examples
 lasso_regression <- function(dataset, dv, startpred, const = 1.1){
   dataset <- as.matrix(dataset)
   dv<-as.matrix(dv)
@@ -49,6 +60,16 @@ lasso_regression <- function(dataset, dv, startpred, const = 1.1){
 
 # Permutation test for regression relating demographics to measures of patience
 
+#' Permutation Test
+#'
+#' @param data
+#' @param dv
+#' @param nrep
+#'
+#' @return
+#' @export
+#'
+#' @examples
 permutation_test <- function(data, dv, nrep = 100){
   # Select predictors (all demographic words) & DV (individual meaasures of patience)
   testvar<-as.matrix(data)
@@ -79,6 +100,19 @@ permutation_test <- function(data, dv, nrep = 100){
 
 # ====================================================
 
+#' Correlations for Multiple Testing
+#'
+#' @param dataset
+#' @param dv
+#' @param unadj_p
+#' @param bh
+#' @param permutation
+#' @param nrep
+#'
+#' @return
+#' @export
+#'
+#' @examples
 multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation = TRUE, nrep = 100){
 
   # how many additinal columns to add
@@ -195,6 +229,20 @@ multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation
 #multiple_testing(dataset = testvar, dv = db$td.Patience, nrep = 1000)
 
 # =============================================================
+#' Partial Correlations for Multiple Testing
+#'
+#' @param data
+#' @param dv
+#' @param controls
+#' @param unadj_p
+#' @param bh
+#' @param permutation
+#' @param nrep
+#'
+#' @return
+#' @export
+#'
+#' @examples
 partial_multiple_testing <- function(data, dv, controls, unadj_p = TRUE, bh = TRUE, permutation = TRUE, nrep = 100){
 
   tname<-colnames(data)
@@ -295,6 +343,15 @@ partial_multiple_testing <- function(data, dv, controls, unadj_p = TRUE, bh = TR
 
 # ==============================================================
 
+#' Canonical Correlations
+#'
+#' @param data
+#' @param dv
+#'
+#' @return
+#' @export
+#'
+#' @examples
 canonical_correlation <- function(data, dv){
 
   dvset<-as.matrix(dv)

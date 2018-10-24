@@ -69,7 +69,7 @@ data_folder <- function(file = "", folder = "", steps_back = 1, ws = FALSE){
     }
   }
 
-  #append folder name
+  # append folder name
   if (stringr::str_length(file) == 0){
   new_folder_data <- new_folder
   } else {
@@ -81,4 +81,10 @@ data_folder <- function(file = "", folder = "", steps_back = 1, ws = FALSE){
     warning("Data folder may be empty or misnamed. Proceed Carefully \n")
   }
   new_folder_data
+}
+
+
+simple_wd <- function(wd){
+
+
 }

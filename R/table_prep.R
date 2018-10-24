@@ -3,6 +3,9 @@
 #' Adds parenthesis to input
 #' @param vector
 #'
+#' @return
+#' @export
+#'
 #' @examples
 #' add_parentheses(45)
 #' (45)
@@ -48,7 +51,7 @@ two_digits <- function(data){
 
 #' Add First Row
 #'
-#' Add an empty row on top of a
+#' Add an empty row on top of a `dataframe`
 #' @param data
 #'
 #' @return
@@ -200,8 +203,9 @@ stargazer_pvalues <- function(table, format){
   } else {
     stop("Format does not match 'brackets', 'parantheses', or 'none' ")
   }
-
+  # most of string
   table <- stringr::str_replace_all(table, "p = (\\d+(\\.\\d{1,2})?)\\d* &", stringr::str_c(left, "\\1", right, " &"))
+  # end of string
   table <- stringr::str_replace_all(table, "p = (\\d+(\\.\\d{1,2})?)\\d* \\\\", stringr::str_c(left, "\\1", right, "\\\\"))
   table
 }
@@ -267,3 +271,91 @@ kable_resize <- function(table, resizebox = .8, minipage = 1){
 
 
 
+
+
+#' Renumber LaTeX Table in a document
+#'
+#' Requires `header needs \newcounter{foo}` to be added in document YAML to work under header-includes:. Useful for adding secondary
+#' counts to tables (e.g., Table 2a, Table 2b). Can also be used to switch primary counts to alternative styles like `alph` or `roman`.
+#'
+#' @param latex_table
+#' @param hold_primary_count Stops the first counter from ascending
+#' @param rm_primary_count Does not show primary count
+#' @param rm_secondary_count Removes secondary count
+#' @param reset_secondary_counter Resets the seconary counter back to 1
+#' @param primary_count_style `Character` vector that should be equal to `alph`, `Alph`, `arabic`, `roman`, or `Roman`.
+#' @param secondary_count_style `Character` vector that should be equal to `alph`, `Alph`, `arabic`, `roman`, or `Roman`.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+table_numbers <- function(latex_table, hold_primary_count = TRUE, rm_primary_count = FALSE,
+                          rm_secondary_count = FALSE, reset_secondary_counter = FALSE,
+                          primary_count_style = "arabic", secondary_count_style = "alph"){
+  # find beginning of table
+  labelnum <- which(stringr::str_detect(latex_table, "\\\\begin\\{table\\}") == TRUE)
+  if(length(labelnum) == 0){
+    stop("Could not find beginning of table")
+  }
+
+  # define standard counter
+  counter = "\\stepcounter{foo}"
+
+  # check if primary_count_style is correct
+  if (primary_count_style == "alph" | primary_count_style == "Alph" |
+      primary_count_style == "arabic" |primary_count_style ==  "roman" |
+      primary_count_style == "Roman"){
+  } else {stop("primary_count_style must be 'alph', 'Alpha', 'arabic', 'roman', or 'Roman'")
+  }
+
+  # check if secondary_count_style is correct
+  if (secondary_count_style == "alph" | secondary_count_style == "Alpha" |
+      secondary_count_style == "arabic" |  secondary_count_style == "roman" |
+      secondary_count_style == "Roman"){
+    secondary_count_style <- stringr::str_c(secondary_count_style, "{foo}")
+  } else {
+    stop("secondary_count_style must be 'alph', 'Alpha', 'arabic', 'roman', or 'Roman'")
+  }
+
+
+  if (reset_secondary_counter == TRUE){
+    counter = "\\setcounter{foo}{0}"
+  }
+
+  if (hold_primary_count == TRUE){
+    tnum <- "\\addtocounter{table}{-1}"
+  } else if (hold_primary_count == FALSE){
+    tnum <- " "
+  }
+
+  if (rm_primary_count == TRUE){
+    table_number <- " "
+  } else if (rm_primary_count == FALSE){
+    table_number <- stringr::str_c("\\", primary_count_style, "{table}\\")
+  }
+  new_number <- stringr::str_c(tnum, counter, "\\renewcommand{\\thetable}{", table_number, secondary_count_style,"}")
+  latex_table[labelnum] <- stringr::str_c(latex_table[labelnum], new_number)
+  latex_table
+}
+
+
+
+#' Italicize a Word in LaTeX Tables.
+#'
+#' Currently set up to be used in papaja documents.
+#'
+#' @param latex_table
+#' @param word `string` of word to italicize
+#'
+#' @return
+#' @export
+#'
+#' @examples
+word_italicize <- function(latex_table, word){
+  labelnum <- which(stringr::str_detect(latex_table, word) == TRUE)
+  if(length(labelnum) == 0){
+    stop("Could not find string match in table")
+  }
+  latex_table[labelnum] <- stringr::str_replace(latex_table[labelnum], word, stringr::str_c("\\textit{", word, "}"))
+}

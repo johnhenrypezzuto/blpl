@@ -10,5 +10,5 @@ add_first_row(data)
 \item{data}{}
 }
 \description{
-Add an empty row on top of a
+Add an empty row on top of a \code{dataframe}
 }

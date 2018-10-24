@@ -7,7 +7,15 @@
 stand.result(eff.type, u.s.d, ctrl.sd, n.t, n.c)
 }
 \arguments{
-\item{n.c}{}
+\item{eff.type}{Effect type. Either \code{d.i.d}, \code{d.i.m}, \code{d}, \code{reg.coef}, \code{t.test}, \code{f.test}}
+
+\item{u.s.d}{Unstandardized effect size}
+
+\item{ctrl.sd}{Control standard deviation}
+
+\item{n.t}{Treatment sample size}
+
+\item{n.c}{Control group sample size}
 }
 \description{
 Standardized Result

@@ -1,10 +1,10 @@
 #' Standardized Result
 #'
-#' @param eff.type
-#' @param u.s.d
-#' @param ctrl.sd
-#' @param n.t
-#' @param n.c
+#' @param eff.type Effect type. Either `d.i.d`, `d.i.m`, `d`, `reg.coef`, `t.test`, `f.test`
+#' @param u.s.d Unstandardized effect size
+#' @param ctrl.sd Control standard deviation
+#' @param n.t Treatment sample size
+#' @param n.c Control group sample size
 #'
 #' @return
 #' @export
@@ -71,10 +71,10 @@ stand.result <- function( eff.type , u.s.d , ctrl.sd , n.t, n.c){
 
 
 
-#' CI converter
+#' Confidence Interval to Standard Deviation
 #'
-#' @param upper Upper confidence interval
-#' @param lower Lower confidence interval
+#' @param upper_ci Upper confidence interval
+#' @param lower_ci Lower confidence interval
 #' @param n Sample size
 #' @param interval Either 95, or 90. 95 by default.
 #'
@@ -82,7 +82,7 @@ stand.result <- function( eff.type , u.s.d , ctrl.sd , n.t, n.c){
 #' @export
 #'
 #' @examples
-CI_converter <- function(upper, lower, n, interval = 95) {
+ci_2_sd <- function(upper_ci, lower_ci, n, interval = 95) {
   # https://handbook-5-1.cochrane.org/chapter_7/7_7_3_2_obtaining_standard_deviations_from_standard_errors_and.htm
   if (interval == 95){
     sd <- (sqrt(n) * (upper - lower)) / 3.92
@@ -105,7 +105,7 @@ CI_converter <- function(upper, lower, n, interval = 95) {
 #' @param mean_treatment_pre
 #' @param mean_control_post
 #' @param mean_control_pre
-#' @param sd
+#' @param sd Control standard deviation
 #'
 #' @return
 #' @export
@@ -162,3 +162,151 @@ sd_pooled <- function(sd, n){
   sd_pooled
 
 }
+
+
+
+#' Regression Coefficient To D
+#'
+#' @param beta Beta from regression
+#' @param standard_error Corrosponding standard error
+#' @param n Corrosponding sample size
+#'
+#' @return
+#' @export
+#'
+#' @examples
+beta_2_d <- function(beta, standard_error, n){
+  t = beta / standard_error
+  d <- (t*2)/sqrt(n-2)
+  d
+}
+
+
+#' Regression Coefficient To R
+#'
+#' @param beta Beta from regression
+#' @param standard_error Corrosponding standard error
+#' @param n Corrosponding sample size
+#'
+#' @return r value
+#' @export
+#'
+#' @examples
+beta_2_r <- function(beta, standard_error, n){
+  t = beta / standard_error
+  d <- (t*2)/sqrt(n-2)
+  r <- sqrt(d^2 / (4 + d^2))
+  r
+}
+
+
+#' Pearson's r to d
+#'
+#' @param r Pearson's r
+#'
+#' @return
+#' @export
+#'
+#' @examples
+r_2_d <- function(r){
+  d <- (4 * r^2) / (1 - r^2)
+  d
+}
+
+
+#' Cohen's d to r
+#'
+#' @param d Cohen's d
+#'
+#' @return
+#' @export
+#'
+#' @examples
+d_2_r <- function(d){
+  r <- sqrt(d^2 / (4 + d^2))
+  r
+}
+
+#' T Inverse
+#'
+#'Calculates t value from p, and n values
+#'
+#' @param p P-value associated with t-test
+#' @param n Sample size associated with t-test
+#'
+#' @return
+#' @export
+#'
+#' @examples
+t_inverse <- function(p, n){
+  # https://stackoverflow.com/questions/21730285/calculating-t-inverse
+  qt(1-p/2, n-2)
+}
+
+#' Convert t-test to d
+#'
+#' @param t A t-test t value
+#' @param n Corrosponding sample size
+#'
+#' @return
+#' @export
+#'
+#' @examples
+t_2_d <- function(t, n){
+  d <- (t*2)/sqrt(n-2)
+  d
+}
+
+
+#' Convert t-test to r
+#'
+#' @param t A t-test value
+#' @param n Corrosponding sample size
+#'
+#' @return
+#' @export
+#'
+#' @examples
+t_2_r <- function(t, n){
+  d <- (t*2)/sqrt(n-2)
+  r <- sqrt(d^2 / (4 + d^2))
+  r
+}
+
+
+
+#' Weighted R
+#'
+#' @param r A pearson's r
+#' @param n Corrosponding sample size
+#'
+#' @return
+#' @export
+#'
+#' @examples
+weighted_r <- function(r, n){
+  Wr <- (n - 1) / ((1 - r^2)^2)
+  Wr
+}
+
+
+#' Merged R
+#'
+#' @param r `Vector` of pearson's R correlations
+#' @param weighted_r `Vector` of weighted R functions. See `weighted_r`
+#'
+#' @return Single meta-analysis r value
+#' @export
+#'
+#' @examples
+merged_r <- function(r, weighted_r){
+  if (length(r) != length(weighted_r)){
+    stop("Length of r and length of weighted_r need to be the same")
+  }
+    total_weighted_r <- sum(weighted_r)
+    new_weighted_r <- weighted_r / total_weighted_r
+    total_product <- new_weighted_r * r
+    sum_total_product <- sum(total_product)
+    sum_total_product
+}
+

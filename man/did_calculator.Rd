@@ -8,7 +8,7 @@ did_calculator(mean_treatment_post, mean_treatment_pre, mean_control_post,
   mean_control_pre, sd)
 }
 \arguments{
-\item{sd}{}
+\item{sd}{Control standard deviation}
 }
 \description{
 Difference in Difference
