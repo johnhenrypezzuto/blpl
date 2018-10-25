@@ -113,23 +113,32 @@ permutation_test <- function(data, dv, nrep = 100){
 #' @export
 #'
 #' @examples
-multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation = TRUE, nrep = 100){
+corr_multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation = TRUE,
+                             save_conf_level = FALSE, print_permutation_summary = FALSE, conf_level = 0.95, nrep = 100){
 
   # how many additinal columns to add
   extra_cols = 0
   if(unadj_p == TRUE){
     extra_cols = extra_cols + 1
+    if(save_conf_level == TRUE){
+      extra_cols = extra_cols + 2
+    }
   }
   if(bh == TRUE){
     extra_cols = extra_cols + 1
   }
   if(permutation == TRUE){
     extra_cols = extra_cols + 1
+    # if(save_conf_level == TRUE){
+    #   extra_cols = extra_cols + 2
+    #   f_add_2 <- 2
+    # } else if (save_conf_level == FALSE) {f_add_2 <- 0}
   }
+  split = (1 - conf_level)/2
 
   dv<-as.matrix(dv)
-  tname<-colnames(dataset)
-  dname<-colnames(dv)
+  tname <- colnames(dataset)
+  dname <- colnames(dv)
   if(is.null(dname)){
     dname = "DV"
   }
@@ -142,7 +151,6 @@ multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation
 
 
 
-
   # matrix to hold results
   results = matrix(0,k*d, 3 + extra_cols)
   for (i in 1:d){
@@ -151,34 +159,47 @@ multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation
       results[(i - 1)*k + j, 2] = dname[i]
     }
   }
+
   results = as.data.frame(results)
+  results = results %>% dplyr::mutate_at(.vars = 3:ncol(results), as.numeric) %>% dplyr::mutate_at(.vars = 1:2, as.character)
   colnames(results)[1] <- "var"
   colnames(results)[2] <- "dv"
   colnames(results)[3] <- "r"
 
   # Correlations
-  corr.values <- matrix(0,nrow=d,ncol=k)
-  p.values <- matrix(0,nrow=d,ncol=k)
+  corr.values <- matrix(0, nrow = d, ncol = k)
+  p.values <- matrix(0, nrow = d, ncol = k)
+  ci.lower <- matrix(0, nrow = d, ncol = k)
+  ci.upper <- matrix(0, nrow = d, ncol = k)
   for (i in 1:k){
     ccor<- cor.test(dv, dataset[,i],
                     method="pearson",
-                    use="pairwise.complete.obs")
-    corr.values[1,i]<-ccor$estimate
-    p.values[1,i]<-ccor$p.value
-
+                    use="pairwise.complete.obs",
+                    conf.level = conf_level)
+    corr.values[1,i] <- ccor$estimate
+    p.values[1,i] <- ccor$p.value
+    ci.lower[1,i] <- ccor$conf.int[1] # ci_lower
+    ci.upper[1,i] <- ccor$conf.int[2] # ci_upper
   }
   acorr.values<-abs(corr.values)
-  max(acorr.values)
+  #max(acorr.values)
   results[,3] <- round(corr.values[1,],3)  # save correlations
 
   # counter for columns
   count = 4
+  if(save_conf_level == TRUE){
+    results[,count] <- round(ci.lower[1,], 3)  # save low_ci
+    colnames(results)[count] <- "unadj_ci_low"
+    count = count + 1
+    results[,count] <- round(ci.upper[1,], 3)  # save high_ci
+    colnames(results)[count] <- "unadj_ci_high"
+    count = count + 1
+  }
   if(unadj_p == TRUE){
     results[,count] <- round(p.values[1,],3)  # save p-values
     colnames(results)[count] <- "unadj_p"
     count = count + 1
   }
-
   # BENJAMINI-HOCHBERG P-VALUE ADJUSTMENT
   if(bh == TRUE){
     results[,count]<-round(p.adjust(p.values, "BH"), 3)     # save BH-corrected p-values
@@ -189,38 +210,57 @@ multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation
   # Permutation Test
   if(permutation == TRUE){
     # Loop to run the simulation
-    f <- matrix(0, nrow = nrep, ncol = 2)
+    f_add_2 <- 0
+    f <- matrix(0, nrow = nrep, ncol = 2 + f_add_2)
 
     for (j in 1:nrep) {
       dvx <- dv[sample(dr)] # reorder the rows of the dv matrix
       for (i in 1:k){
         ccor <- cor.test(dvx, dataset[,i],
-                        method="pearson",
-                        use="pairwise.complete.obs")
+                         method="pearson",
+                         use="pairwise.complete.obs",
+                         conf.level = conf_level)
         corr.values[1,i] <- ccor$estimate
         p.values[1,i] <- ccor$p.value
+        # ci.lower[1,i] <- ccor$conf.int[1] # ci_lower
+        # ci.upper[1,i] <- ccor$conf.int[2] # ci_upper
       }
       f[j,1] <- max(abs(corr.values))
-      f[j,2] <- sum(p.values < .05)
+      f[j,2] <- sum(p.values < .05) # number significant by chance
+      # if (save_conf_level ==TRUE){
+      #   f[j,3] <- ci.lower[1,i]  # ci_lower
+      #   f[j,4] <- ci.upper[1,i]  # ci_upper
+      # }
     }
-
-    fs<-sort(f[,1])
-    print ("95th percentile of largest correlation by chance:")
-    print(fs[trunc(.95*nrep)])
-    print ("average number of correlations significant by chance:")
-    fs<-sort(f[,2])
-    print(mean(fs))
-    print ("95th percentile number of correlations significant by chance:")
-    print(fs[trunc(.95*nrep)])
-
+    if (print_permutation_summary == TRUE){
+      fs<-sort(f[,1])
+      cat("95th percentile of largest correlation by chance: ")
+      cat(fs[trunc(.95*nrep)], "\n \n")
+      cat ("average number of correlations significant by chance: ")
+      fs<-sort(f[,2])
+      cat(mean(fs), "\n \n")
+      cat ("95th percentile number of correlations significant by chance: ")
+      cat(fs[trunc(.95*nrep)], "\n \n")
+    }
     # save permuation-based p-values
     colnames(results)[count] <- "permutation_p"
-    results$permutation_p <- NA_real_
+    results$permutation_p <- 0
 
     for (i in 1:nrow(results)){
-      x <- abs(as.numeric(results[i,3]))
+      x <- abs(as.numeric(results[i,3])) # regular correlation
+      # place regular into distribution and see which place it lands, later landing is lower p value
       results[i,count] <- 1 - round(match(x, sort(c(f[,1],x))) / (length(f[,1]) + 1), 3)
+      #  if (save_conf_level ==TRUE){
+      #   results[i, count + 1] <- quantile(f[,3], probs = 0 + split)  # ci_lower
+      #   results[i, count + 2] <- quantile(f[,4], probs = 1 - split)  # ci_upper
+      # }
     }
+    # if (save_conf_level == TRUE){
+    #   count = count + 1
+    #   colnames(results)[count] <- "perm_ci_low"
+    #   count = count + 1
+    #   colnames(results)[count] <- "perm_ci_high"
+    # }
     count = count + 1
   }
   results
@@ -243,7 +283,7 @@ multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permutation
 #' @export
 #'
 #' @examples
-partial_multiple_testing <- function(data, dv, controls, unadj_p = TRUE, bh = TRUE, permutation = TRUE, nrep = 100){
+partial_corr_multiple_testing <- function(data, dv, controls, unadj_p = TRUE, bh = TRUE, permutation = TRUE, nrep = 100){
 
   tname<-colnames(data)
   dv<-as.matrix(dv)

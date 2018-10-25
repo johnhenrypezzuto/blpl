@@ -310,3 +310,39 @@ merged_r <- function(r, weighted_r){
     sum_total_product
 }
 
+
+
+chisq_2_r <- function(chisq, df, n){
+  if (df == 1){
+    r <- sqrt(chisq / n)
+  } else {
+    r <- sqrt(chisq / (chisq+n))
+  }
+  r
+}
+
+chisq_2_d <- function(chisq, df, n){
+  if (df == 1){
+    d <- 2*sqrt(chisq / n - chisq)
+  } else {
+    d <- 2*sqrt(chisq / n)
+  }
+  d
+}
+
+
+
+z_2_d <- function(z, n){
+  d <- 2*z / sqrt(n)
+  d
+}
+
+z_2_r <- function(z, n){
+  r <- sqrt(z^2 / z^2 + n)
+  r
+}
+
+
+# test <- c(1, 2, 4, 6)
+# test2 <- c(99, 0, 3, 5)
+# sum(test*test2)
