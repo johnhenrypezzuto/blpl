@@ -5,7 +5,7 @@
 #' @param data Dataframe with corresponding data that was used in the tidy_lm function.
 #' @export
 #' @return Returns a tibble with all lms that can be directly used with stargazer.
-
+#tidy_lm_df <- four_a_
 star_ready <- function(tidy_lm_df, data){
 
   # define grouped cluster_fun
@@ -29,11 +29,11 @@ star_ready <- function(tidy_lm_df, data){
   ## fill with lm
   z = 1
   for (z in 1:nrow(results)){
-    j <- tidy_lm_short$dv[z]
-    terms <- tidy_lm_short[z,2:ncol(tidy_lm_short)]
+    j <- tidy_lm_short$dv[z] # take dv
+    terms <- tidy_lm_short[z,-c(1)] # take terms
     i <- paste(terms,collapse=" + ")
     i <- stringr::str_remove_all(i, " \\+ NA")
-    results[z,1] <- data %>% do(y = lm(paste(j, "~", i), data = data))
+    results[z,1] <- data %>% do(y = lm(paste(j, "~", i), data = data)) # redo model
     results$lm[[z]]$call[[2]][2] <- tidy_lm_df$dv[z] # fix dv
   }
   output <- results
