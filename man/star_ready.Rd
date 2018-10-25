@@ -5,7 +5,7 @@
 \title{Star Ready
 Prepares output from \code{tidy_lm} for use with the package stargazer}
 \usage{
-star_ready(tidy_lm_df, data = .)
+star_ready(tidy_lm_df, data)
 }
 \arguments{
 \item{tidy_lm_df}{A \code{tibble} from the \code{tidy_lm} function. No columns can be missing or out of the original order. Rows can be appended so long as they use the same data.}
