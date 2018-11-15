@@ -23,6 +23,20 @@
 # dv = c("mpg", "hp"); style = "default"; terms = "cyl"; treatment = "cyl"; robust_se = FALSE; alpha = .05; print_summary = FALSE
 # lm(mpg ~ cyl, data = data)
 
+data = response_rate %>%
+  filter(`Career stage` == 'Published Author') %>%
+  mutate(Discipline = str_c("is.", Discipline)) %>%
+  mutate(yesno = TRUE) %>%
+  distinct %>%
+  spread(Discipline, yesno, fill = FALSE) %>%
+  select(completed_survey, publication_count_total, publication_count_total_90th, starts_with("is."))
+
+dv = "completed_survey"; terms = "publication_count_total_90th"; treatment = c(
+    "is.Economics",
+    "`is.Political Science`",
+    "is.Psychology",
+    "is.Sociology");
+    print_summary = FALSE)
 
 tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE){
 
@@ -353,11 +367,24 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
   # Extract Treatment Info (need to change a little bit to support factors)
   ## support for factors
+  i = 1
   for(i in 1:length(treatment)) {
+  has_backticks <- stringr::str_count(treatment[i], "`")
+  treatment[i] <- stringr::str_remove_all(treatment[i], "`")
   try(
-    if((lapply(data[,treatment[i]], class) == "factor") | (lapply(data[,treatment[i]], class) == "logical")){ # if there are multiple representations e.g., factors logical
+    if (lapply(data[,treatment[i]], class) == "factor") { # if there are multiple representations e.g., factors logical
+      if(has_backticks > 0){
+        treatment[i] <- str_c("`", treatment[i], "`")
+      }
       treatment <- append(treatment[i], stringr::str_c(treatment[i], sapply(data[,treatment[i]], levels)[-1]), after = i)
       treatment <- setdiff(treatment, treatment[i])
+    }, silent = TRUE)
+  try(
+    if (lapply(data[,treatment[i]], class) == "logical"){
+      if(has_backticks > 0){
+        treatment[i] <- str_c("`", treatment[i], "`")
+      }
+      treatment[i] <- stringr::str_c(treatment[i], "TRUE")
     }, silent = TRUE)
    }
   i = 1
@@ -385,7 +412,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
 
 
-      j = 1
+      j = 2
       for (j in 1:nrow(results)){
         take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
           # if (length(take) == 0){
