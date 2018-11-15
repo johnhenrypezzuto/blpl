@@ -121,7 +121,7 @@ corr_multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permut
   if(unadj_p == TRUE){
     extra_cols = extra_cols + 1
     if(save_conf_level == TRUE){
-      extra_cols = extra_cols + 2
+      extra_cols = extra_cols + 3
     }
   }
   if(bh == TRUE){
@@ -134,7 +134,7 @@ corr_multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permut
     #   f_add_2 <- 2
     # } else if (save_conf_level == FALSE) {f_add_2 <- 0}
   }
-  split = (1 - conf_level)/2
+  split = (1 - conf_level) / 2
 
   dv<-as.matrix(dv)
   tname <- colnames(dataset)
@@ -193,6 +193,9 @@ corr_multiple_testing <- function(dataset, dv, unadj_p = TRUE, bh = TRUE, permut
     count = count + 1
     results[,count] <- round(ci.upper[1,], 3)  # save high_ci
     colnames(results)[count] <- "unadj_ci_high"
+    count = count + 1
+    results[,count] <- (results[,count - 1] - results[,count - 2]) / (qnorm(1 - split, 0, 1) * 2) # save SE
+    colnames(results)[count] <- "SE"
     count = count + 1
   }
   if(unadj_p == TRUE){

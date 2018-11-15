@@ -19,6 +19,10 @@
 #' @param data A `data.frame`
 #' @export
 #' @return  A `tibble` containing all linear models, and data on what variables are included in each model.
+# data = mtcars; data %<>% mutate(cyl = factor(cyl))
+# dv = c("mpg", "hp"); style = "default"; terms = "cyl"; treatment = "cyl"; robust_se = FALSE; alpha = .05; print_summary = FALSE
+# lm(mpg ~ cyl, data = data)
+
 
 tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE){
 
@@ -42,21 +46,19 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   ## Run through function if necessary
   test <- try(length(dv), silent = TRUE)
   if (class(test) == "try-error"){
-    dv <- as.character(friendlyeval::treat_input_as_expr(dv))
+    dv <- as.character(rlang::enquo(dv))
     dv <- quote_machine(dv)
   }
   test <- try(length(terms), silent = TRUE)
   if (class(test) == "try-error"){
-    terms <- as.character(friendlyeval::treat_input_as_expr(terms))
+    terms <- as.character(rlang::enquo(terms))
     terms <- quote_machine(terms)
   }
   test <- try(length(treatment), silent = TRUE)
   if (class(test) == "try-error"){
-    treatment <- as.character(friendlyeval::treat_input_as_expr(treatment))
+    treatment <- as.character(rlang::enquo(treatment))
     treatment <- quote_machine(treatment)
   }
-
-
 
 
 
@@ -67,10 +69,10 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
     stop("Style must be 'incremental', 'bivariate', 'chord', or 'default'")
   }
 
-  ## Check DV Variables
+  ## Check DV Variables (this is intends to check if dv exist)
+  i = 1
   for(i in 1:length(dv)) {
-    test <- try(data[,dv[i]])
-    if (class(test) == "try-error"){
+    if (!dv[i] %in% colnames(data)){
       stop("'", dv[i], "'", " is not a variable in the dataset")
     }
   }
@@ -79,9 +81,9 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
     num <- which(dv %in% terms)
     stop("'",dv[num],"'", " is in both the dv and terms")
   }
-  ## Check Terms Variables
+  ## Check Terms Variables (this could be more efficient)
   for(i in terms) {
-    test <- try(lm(paste(dv[1], "~", i), data = data))
+     test <- try(lm(paste(dv[1], "~", i), data = data))
     if (class(test) == "try-error"){
       stop("'", i, "'", " is not a variable in the dataset")
     }
@@ -112,7 +114,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
   ## assign standard error type, and ready cluster to be printed
   if (is.null(clusters) == FALSE) {
-    clusters <- as.character(friendlyeval::treat_input_as_expr(clusters))
+    clusters <- as.character(rlang::enquo(clusters))
     clusters <- quote_machine(clusters)
     standard_error = "stata"
     cluster = paste0(", clusters = ", clusters)
@@ -349,11 +351,19 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
     results <- results %>% dplyr::select(1:(2 + l), clusters, lm)
   }
 
-  # Extract Treatment Info
+  # Extract Treatment Info (need to change a little bit to support factors)
+  ## support for factors
+  for(i in 1:length(treatment)) {
+  try(
+    if((lapply(data[,treatment[i]], class) == "factor") | (lapply(data[,treatment[i]], class) == "logical")){ # if there are multiple representations e.g., factors logical
+      treatment <- append(treatment[i], stringr::str_c(treatment[i], sapply(data[,treatment[i]], levels)[-1]), after = i)
+      treatment <- setdiff(treatment, treatment[i])
+    }, silent = TRUE)
+   }
   i = 1
   if (is.null(treatment) == FALSE){
-
     for(i in 1:length(treatment)) {
+
       ## populate treatment vars
       nam_coef <- paste(treatment[i], "coef",sep = "_")
       results[, nam_coef] <- NA_real_
@@ -375,9 +385,14 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
 
 
-
+      j = 1
       for (j in 1:nrow(results)){
         take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
+          # if (length(take) == 0){
+          #   treatment[i] <- stringr::str_c(treatment[i], "TRUE")
+          #   take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
+          #   treatment[i] <- stringr::str_remove(treatment[i], "TRUE")
+          # }
 
         ### get coeficients
         try(results[j, nam_coef] <- results[j, "lm"][[1]][[1]][[1]][take], silent = TRUE)
@@ -402,8 +417,8 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
     }
   }
 
-
   results
 }
 
+#  tidy_lm(data = data, dv = c("mpg", "hp") , style = "default", terms = "cyl", treatment = "cyl", robust_se = FALSE, alpha = .05, print_summary = FALSE) %>% View
 
