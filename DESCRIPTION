@@ -9,7 +9,6 @@ Imports:
     dplyr,
     estimatr,
     friendlyeval,
-    lmtest,
     multiwayvcov,
     purrr,
     sandwich,

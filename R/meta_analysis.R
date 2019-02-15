@@ -323,7 +323,7 @@ chisq_2_r <- function(chisq, df, n){
 
 chisq_2_d <- function(chisq, df, n){
   if (df == 1){
-    d <- 2*sqrt(chisq / n - chisq)
+    d <- 2*sqrt(chisq /( n - chisq))
   } else {
     d <- 2*sqrt(chisq / n)
   }

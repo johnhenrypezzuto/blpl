@@ -57,8 +57,8 @@ two_digits <- function(data){
 #' @return
 #' @export
 #'
-add_first_row <- function(data){
-  out <- rbind(NA_real_, data)
+add_top_row <- function(data, value = NA_real_){
+  out <- rbind(value, data)
   out
 }
 
@@ -71,8 +71,8 @@ add_first_row <- function(data){
 #' @return
 #' @export
 #'
-add_last_row <- function(data){
-  out <-rbind(data, NA_real_)
+add_bottom_row <- function(data, value = NA_real_){
+  out <-rbind(data, value)
   out
 }
 
@@ -270,7 +270,10 @@ kable_resize <- function(table, resizebox = .8, minipage = 1){
 }
 
 
-
+## Perhaps renumber can be improved with some variation of
+# usepackage_latex <- function(name, options = NULL) {
+#   invisible(knit_meta_add(list(latex_dependency(name, options))))
+# }
 
 
 #' Renumber LaTeX Table in a document
