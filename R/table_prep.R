@@ -49,7 +49,7 @@ two_digits <- function(data){
   out
 }
 
-#' Add First Row
+#' Add Top Row
 #'
 #' Add an empty row on top of a `dataframe`
 #' @param data
@@ -63,7 +63,7 @@ add_top_row <- function(data, value = NA_real_){
 }
 
 
-#' Add Last Row
+#' Add Bottom Row
 #'
 #' Adds an empty row to the bottom of a `dataframe`
 #' @param data
@@ -362,3 +362,6 @@ word_italicize <- function(latex_table, word){
   }
   latex_table[labelnum] <- stringr::str_replace(latex_table[labelnum], word, stringr::str_c("\\textit{", word, "}"))
 }
+
+
+
