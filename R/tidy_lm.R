@@ -29,7 +29,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   # Tidy eval workaround
   ## function for cleaning vectors
   quote_machine <- function(vector){
-    if(str_sub(vector[2], 1, 2) != "c("){
+    if(stringr::str_sub(vector[2], 1, 2) != "c("){
       x2 <- vector[2]
     } else {
       x2 <- trimws(stringr::str_split(stringr::str_sub(vector[2], 3, -2), ",")[[1]])
@@ -64,9 +64,9 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
   # Check Inputs
   ## Check Style
-  if (style == "incremental" | style == "bivariate" || style == "default" || style == "chord") {
+  if (style == "incremental" | style == "bivariate" || style == "default" || style == "chord" || style == "weave") {
   } else {
-    stop("Style must be 'incremental', 'bivariate', 'chord', or 'default'")
+    stop("Style must be 'incremental', 'bivariate', 'chord', 'weave', or 'default'")
   }
 
   ## Check DV Variables (this is intends to check if dv exist)
@@ -122,17 +122,18 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   }
 
   ## check that treatment is in terms
-  if(style != "default"){
+  if (style == "default" || style == "weave"){
+    unique_terms <- dplyr::setdiff(treatment, terms)
+  } else {
     if (length(treatment) != sum(treatment %in% terms)){
       stop("'", treatment[which((treatment %in% terms) == FALSE)], "'", " is included as a treatment, but not included as a term")
     }
-  } else if (style == "default"){
-    unique_terms <- dplyr::setdiff(treatment, terms)
   }
 
 
 
   # lm function
+  simple_model = FALSE # default is lm_robust
   lm_function <- function(){
     data %>% do(y = estimatr::lm_robust(as.formula(paste(j, "~", i)),
                                         data = data,
@@ -140,7 +141,17 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
                                         clusters =  cluster_data,
                                         se_type = standard_error))
   }
-
+  if (robust_se == FALSE & is.null(clusters)){
+    simple_model = TRUE
+    lm_function <- function(){
+      data %>% do(y = lm(as.formula(paste(j, "~", i)),
+                                          data = data
+                                          #alpha = alpha,
+                                          #clusters =  cluster_data,
+                                          #se_type = standard_error
+                                   ))
+    }
+  }
   # get df name
   data_name <-deparse(substitute(data))
 
@@ -153,7 +164,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
                ", se_type = \"", standard_error,
                "\", data = ", data_name, ")\n"))
     working_sum <- summary(results[loopnum, ncol(results)][[1]][[1]])
-    cat(paste0("N = ", working_sum$N, "\n"))
+    try(cat(paste0("N = ", working_sum$N, "\n")), silent = TRUE) # doesn't work in basic version
     print(working_sum$coefficients)
     cat("\n")
     cat("R-Sq = ", working_sum$r.squared,
@@ -182,6 +193,9 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
     t = length(terms) + 1
     l = t - 1
     term_loop <- terms[2:length(terms)]
+  } else if (style == "weave"){
+    t = 2
+    l = length(terms) + length(dv)
   }
 
 
@@ -216,7 +230,11 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         results[((i * length(unique_terms)) - (length(unique_terms) - 1)):(i * length(unique_terms)), 2] <- rep(dv[i], nrow(results)/length(dv))
       }
     }
-
+  } else if (style == "weave"){
+      for(i in i:length(dv)){
+        results[(i*length(dv)-1):(i*length(dv)), 2] <- rep(dv[i], nrow(results)/length(dv))
+        i = i + 2
+      }
   }
 
   ### Column 3 : n terms
@@ -252,6 +270,14 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         results[seq(i, nrow(results), by = length(unique_terms)), length(terms) + 3] <-
           rep(unique_terms[i], length(seq(i, nrow(results), by = length(unique_terms))))
       }
+    }
+  } else if (style == "weave"){
+    for(i in i:length(dv)){
+      results[ , 2 + i] <- rep(treatment[i], nrow(results))
+    }
+    i = 1
+    for(i in i:length(terms)){
+      results[seq(2, nrow(results), by = 2), 2 + length(dv) + i] <- rep(terms[i], nrow(results)/2)
     }
   }
 
@@ -299,7 +325,6 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
       }
     }
   } else if (style == "chord"){
-
     for (j in dv){
       loopnum = loopnum + 1
       i = paste(terms[1])
@@ -308,7 +333,6 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
       if(print_summary == TRUE){
         tidy_summaries()
       }
-
       for (z in term_loop){
         loopnum = loopnum + 1
         i = paste(terms[1], " + ", z)
@@ -327,13 +351,14 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         }
       }
     }
-  } else if (style == "default"){
+  } else if (style == "weave"){
     full_terms <- results[,3:(ncol(results)-1)]
 
     for (z in 1:nrow(results)){
       loopnum = loopnum + 1
       j <- as.character(results[z,2])
       i <- paste(full_terms[z,], collapse=" + ")
+      i <- str_remove_all(i, " \\+ 0")
       results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary == TRUE){
@@ -354,6 +379,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   # Extract Treatment Info (need to change a little bit to support factors)
   ## support for factors
   i = 1
+  suppressWarnings(
   for(i in 1:length(treatment)) {
   has_backticks <- stringr::str_count(treatment[i], "`")
   treatment[i] <- stringr::str_remove_all(treatment[i], "`")
@@ -372,7 +398,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
       }
       treatment[i] <- stringr::str_c(treatment[i], "TRUE")
     }, silent = TRUE)
-   }
+   })
   i = 1
   if (is.null(treatment) == FALSE){
     for(i in 1:length(treatment)) {
@@ -398,7 +424,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
 
 
 
-      j = 2
+      j = 1
       for (j in 1:nrow(results)){
         take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
           # if (length(take) == 0){
@@ -410,12 +436,6 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         ### get coeficients
         try(results[j, nam_coef] <- results[j, "lm"][[1]][[1]][[1]][take], silent = TRUE)
 
-        ### get ci low
-        try(results[j, nam_ci_low] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,5][take], silent = TRUE)
-
-        ### get ci upper
-        try(results[j, nam_ci_upper] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,6][take], silent = TRUE)
-
         ### get se
         try(results[j, nam_se] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,2][take], silent = TRUE)
 
@@ -425,11 +445,20 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         ### get p values
         try(results[j, nam_p] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,4][take], silent = TRUE)
 
-
-      }
+        if(simple_model == FALSE){
+          ### get ci low
+          try(results[j, nam_ci_low] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,5][take], silent = TRUE)
+          ### get ci upper
+          try(results[j, nam_ci_upper] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,6][take], silent = TRUE)
+        } else if(simple_model == TRUE){
+          ### get ci low
+          try(results[j, nam_ci_low] <- results[j, nam_coef] - results[j, nam_se]*2, silent = TRUE) ## not adapted for other CI yet
+          ### get ci upper
+          try(results[j, nam_ci_upper] <- results[j, nam_coef] + results[j, nam_se]*2, silent = TRUE) ## not adapted for other CI yet
+       }
     }
   }
-
+}
   results
 }
 
