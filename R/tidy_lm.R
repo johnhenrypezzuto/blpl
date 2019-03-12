@@ -24,7 +24,7 @@
 # lm(mpg ~ cyl, data = data)
 
 
-tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, clusters = NULL, robust_se = FALSE, alpha = .05, print_summary = FALSE){
+tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", clusters = NULL, robust_se = FALSE, alpha = .05, multiple_testing = NULL, print_summary = FALSE){
 
   # Tidy eval workaround
   ## function for cleaning vectors
@@ -67,6 +67,11 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   if (style == "incremental" | style == "bivariate" || style == "default" || style == "chord" || style == "weave") {
   } else {
     stop("Style must be 'incremental', 'bivariate', 'chord', 'weave', or 'default'")
+  }
+  ## Check multiple testing
+  if (style == "FDR" | style == "BH" || style == "permutation") { # check spelling
+  } else {
+    stop("Style must be 'FDR', 'BH', 'permutation'")
   }
 
   ## Check DV Variables (this is intends to check if dv exist)
@@ -144,7 +149,8 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
   if (robust_se == FALSE & is.null(clusters)){
     simple_model = TRUE
     lm_function <- function(){
-      data %>% do(y = lm(as.formula(paste(j, "~", i)),
+      model <- paste(j, "~", i)
+      data %>% do(y = lm(model,
                                           data = data
                                           #alpha = alpha,
                                           #clusters =  cluster_data,
@@ -319,9 +325,7 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         loopnum = loopnum + 1
         results[loopnum, ncol(results)] <- lm_function()
 
-        if(print_summary == TRUE){
-          tidy_summaries()
-        }
+        if(print_summary) tidy_summaries()
       }
     }
   } else if (style == "chord"){
@@ -338,16 +342,13 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
         i = paste(terms[1], " + ", z)
         results[loopnum, ncol(results)] <- lm_function()
 
-        if(print_summary == TRUE){
-          tidy_summaries()
-        }
+        if(print_summary) tidy_summaries()
+
         if (z == tail(term_loop, n = 1)){
           loopnum = loopnum + 1
           i <- paste(terms, collapse = " + ")
           results[loopnum, ncol(results)] <- lm_function()
-          if(print_summary == TRUE){
-            tidy_summaries()
-          }
+          if(print_summary) tidy_summaries()
         }
       }
     }
@@ -361,9 +362,8 @@ tidy_lm <- function(data, dv, terms, style = "default", treatment = NULL, cluste
       i <- str_remove_all(i, " \\+ 0")
       results[loopnum, ncol(results)] <- lm_function()
 
-      if(print_summary == TRUE){
-        tidy_summaries()
-      }
+      if(print_summary) tidy_summaries()
+
     }
   }
 
