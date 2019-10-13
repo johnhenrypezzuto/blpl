@@ -1,12 +1,15 @@
 ## sticker
 library(hexSticker)
 
-imgurl <- "rainbow.png"
-?sticker
-sticker(imgurl, package="blpl", p_color = "#FFFFFF",
-        h_color = "#A3EFFF", h_size = 0,
-        p_size=8, s_x=1, s_y=.75, s_width=.6, 
-        filename="imgfile.png")
+imgurl <- "sticker/rainbow.png"
 
-library(blpl)
-?tidy_lm
+sticker(imgurl,
+        package="blpl",
+        p_color = "#FFFFFF",
+        h_color = "#A3EFFF",
+        h_size = 0,
+        p_size=8,
+        s_x=1,
+        s_y=.75,
+        s_width=.6,
+        filename="sticker/imgfile.png")

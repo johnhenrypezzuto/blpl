@@ -9,4 +9,5 @@ install.packages("devtools")
 devtools::install_github("johnhenrypezzuto/blpl")
 ```
 
-![blpl_sticker](/sticker/imgfile.png =.25x)
+![blpl_sticker](/sticker/imgfile.png  =250x250)
+
