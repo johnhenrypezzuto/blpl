@@ -8,9 +8,7 @@ Imports:
     broom,
     dplyr,
     estimatr,
-    multiwayvcov,
     purrr,
-    sandwich,
     stringr
 License: GPL-3 | file LICENSE
 Encoding: UTF-8

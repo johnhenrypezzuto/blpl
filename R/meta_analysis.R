@@ -341,8 +341,3 @@ z_2_r <- function(z, n){
   r <- sqrt(z^2 / z^2 + n)
   r
 }
-
-
-# test <- c(1, 2, 4, 6)
-# test2 <- c(99, 0, 3, 5)
-# sum(test*test2)
