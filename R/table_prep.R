@@ -107,7 +107,7 @@ nothing <- function(data) data
 #' `\label{tab:demographics}` # this will print as Table 1, and update depending on the order of the tables.
 table_label <- function(latex_table, caption){
   # if label exists
-  labelnum <- which(stringr::str_detect(latex_table, "\\\\label\\{\\w{3}:\\w*\\}") == TRUE)[1]
+  labelnum <- which(stringr::str_detect(latex_table, "\\label\\{.*\\}"))[1]
   if(!is.na(labelnum)){
     latex_table <- stringr::str_replace(latex_table, "(\\\\label\\{\\w{3}:)\\w*\\}", stringr::str_c("\\1", caption, "\\}"))
     # if caption exists
@@ -247,7 +247,7 @@ print_table <- function(latex_table){
 #' Kable Resize
 #'
 #'An option for when `kable_styling(full_width = F, latex_options = "scale_down")` isn't enough. This function depends on you already attempting to resize using the aforementioned function.
-#' When using with endnotes, I recommend to use this function with `kableExtra`'s built in, so that the resize corrosponds with the table
+#' When using with endnotes, I recommend to use this function with `kableExtra`'s built in, so that the resize corresponds with the table
 #'footnote function
 #' @param table
 #' @param resizebox
@@ -364,4 +364,9 @@ word_italicize <- function(latex_table, word){
 }
 
 
-
+partial_header_line <- function(latex_output){
+  number_line <- which(str_detect(latex_output, "\\((\\d?\\d\\))\\\\\\\\"))[1]
+  n_models <- as.numeric(str_extract(str_extract(latex_output[number_line], "\\((\\d?\\d\\))\\\\\\\\"), "(\\d?\\d)"))
+  latex_output[number_line] <- str_c("\\cline{2-",n_models+1,"} ", latex_output[number_line]) # OR \\cmidrule(lr){2-
+  latex_output
+}

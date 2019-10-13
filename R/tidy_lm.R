@@ -25,6 +25,8 @@
 
 
 tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", clusters = NULL, robust_se = FALSE, alpha = .05, multiple_testing = NULL, print_summary = FALSE){
+  if(hasArg(dv) == FALSE) stop("must have dv")
+  if(hasArg(terms) == FALSE) stop("must have terms")
 
   # Tidy eval workaround
   ## function for cleaning vectors
@@ -44,16 +46,19 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
   }
 
   ## Run through function if necessary
+  ### dv
   test <- try(length(dv), silent = TRUE)
   if (class(test) == "try-error"){
     dv <- as.character(rlang::enquo(dv))
     dv <- quote_machine(dv)
   }
+  ### terms
   test <- try(length(terms), silent = TRUE)
   if (class(test) == "try-error"){
     terms <- as.character(rlang::enquo(terms))
     terms <- quote_machine(terms)
   }
+  ### treatment
   test <- try(length(treatment), silent = TRUE)
   if (class(test) == "try-error"){
     treatment <- as.character(rlang::enquo(treatment))
@@ -69,16 +74,22 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     stop("Style must be 'incremental', 'bivariate', 'chord', 'weave', or 'default'")
   }
   ## Check multiple testing
-  if (style == "FDR" | style == "BH" || style == "permutation") { # check spelling
+  if (multiple_testing == "FDR" | multiple_testing == "BH" || multiple_testing == "permutation" || is.null(multiple_testing)) { # check spelling
   } else {
-    stop("Style must be 'FDR', 'BH', 'permutation'")
+    stop("multiple_testing must be 'FDR', 'BH', 'permutation'")
   }
 
   ## Check DV Variables (this is intends to check if dv exist)
   i = 1
+
   for(i in 1:length(dv)) {
     if (!dv[i] %in% colnames(data)){
-      stop("'", dv[i], "'", " is not a variable in the dataset")
+      stop("'", dv[i], "'", " in the dv is not a variable in the dataset")
+    }
+    if (sapply(data[,dv[i]], class) == "factor"){
+      stop("'", dv[i], "'", " variable in the dv can't be type factor")
+    } else if (sapply(data[,dv[i]], class) == "list"){
+      stop("'", dv[i], "'", " variable in the dv can't be type list")
     }
   }
   ## No Matches In DV And Terms
@@ -86,11 +97,10 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     num <- which(dv %in% terms)
     stop("'",dv[num],"'", " is in both the dv and terms")
   }
-  ## Check Terms Variables (this could be more efficient)
-  for(i in terms) {
-     test <- try(lm(paste(dv[1], "~", i), data = data))
-    if (class(test) == "try-error"){
-      stop("'", i, "'", " is not a variable in the dataset")
+  ## Check Terms Variables
+  for(i in 1:length(terms)) {
+    if (!terms[i] %in% colnames(data)){
+      stop("'", terms[i], "'", " in the dv is not a variable in the dataset")
     }
   }
 
@@ -150,12 +160,7 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     simple_model = TRUE
     lm_function <- function(){
       model <- paste(j, "~", i)
-      data %>% do(y = lm(model,
-                                          data = data
-                                          #alpha = alpha,
-                                          #clusters =  cluster_data,
-                                          #se_type = standard_error
-                                   ))
+      data %>% do(y = lm(model, data = data))
     }
   }
   # get df name
@@ -201,7 +206,7 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     term_loop <- terms[2:length(terms)]
   } else if (style == "weave"){
     t = 2
-    l = length(terms) + length(dv)
+    l = length(terms) + length(treatment)
   }
 
 
@@ -237,10 +242,13 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
       }
     }
   } else if (style == "weave"){
-      for(i in i:length(dv)){
-        results[(i*length(dv)-1):(i*length(dv)), 2] <- rep(dv[i], nrow(results)/length(dv))
-        i = i + 2
-      }
+    j = 1
+    i = 1
+    for(i in i:length(dv)){
+      results[j:(j+1), 2] <- rep(dv[i], 2)
+      i = i + 1
+      j = i+(i-1)
+    }
   }
 
   ### Column 3 : n terms
@@ -278,25 +286,25 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
       }
     }
   } else if (style == "weave"){
-    for(i in i:length(dv)){
+    for(i in i:length(treatment)){
       results[ , 2 + i] <- rep(treatment[i], nrow(results))
     }
     i = 1
     for(i in i:length(terms)){
-      results[seq(2, nrow(results), by = 2), 2 + length(dv) + i] <- rep(terms[i], nrow(results)/2)
+      results[seq(2, nrow(results), by = 2), 2 + length(treatment) + i] <- rep(terms[i], nrow(results)/2)
     }
   }
 
   ### Rename Columns
-  results <- dplyr::as_tibble(results) %>%
-    dplyr::rename("model_number"= V1,
-                  "dv" = V2) %>%
-    dplyr::mutate(model_number = as.integer(model_number))
+  results <- dplyr::as_tibble(results)
+  colnames(results)[1] <- "model_number"
+  colnames(results)[2] <- "dv"
+  results$model_number <- as.integer(results$model_number)
   names(results)[3:(2+l)] <- paste("var", seq(1, l, by = 1), sep = "_")
   names(results)[ncol(results)]<-"lm"
   results$lm <- as.list(results$lm)
 
-  ### Final Column - estimatr::lm_robust model
+  ### Final Column - lm model
   loopnum = 0
   restart = 0
   j = 1
@@ -314,9 +322,7 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
           i <- stringr::str_c(i, i_working, sep = " + ")
         }
         results[loopnum, ncol(results)] <- lm_function()
-        if(print_summary == TRUE){
-          tidy_summaries()
-        }
+        if(print_summary) tidy_summaries()
       }
     }
   } else if (style == "bivariate"){
@@ -334,9 +340,8 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
       i = paste(terms[1])
       results[loopnum, ncol(results)] <- lm_function()
 
-      if(print_summary == TRUE){
-        tidy_summaries()
-      }
+      if(print_summary == TRUE) tidy_summaries()
+
       for (z in term_loop){
         loopnum = loopnum + 1
         i = paste(terms[1], " + ", z)
@@ -354,16 +359,25 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     }
   } else if (style == "weave"){
     full_terms <- results[,3:(ncol(results)-1)]
-
     for (z in 1:nrow(results)){
       loopnum = loopnum + 1
       j <- as.character(results[z,2])
       i <- paste(full_terms[z,], collapse=" + ")
       i <- str_remove_all(i, " \\+ 0")
+      results[z, ncol(results)] <- lm_function()
+
+      if(print_summary) tidy_summaries()
+    }
+  } else if (style == "default"){
+    full_terms <- results[,3:(ncol(results)-1)]
+
+    for (z in 1:nrow(results)){
+      loopnum = loopnum + 1
+      j <- as.character(results[z,2])
+      i <- paste(full_terms[z,], collapse=" + ")
       results[loopnum, ncol(results)] <- lm_function()
 
       if(print_summary) tidy_summaries()
-
     }
   }
 
@@ -376,30 +390,42 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
     results <- results %>% dplyr::select(1:(2 + l), clusters, lm)
   }
 
-  # Extract Treatment Info (need to change a little bit to support factors)
-  ## support for factors
+  # Extract Treatment Info
   i = 1
-  suppressWarnings(
-  for(i in 1:length(treatment)) {
-  has_backticks <- stringr::str_count(treatment[i], "`")
-  treatment[i] <- stringr::str_remove_all(treatment[i], "`")
-  try(
-    if (lapply(data[,treatment[i]], class) == "factor") { # if there are multiple representations e.g., factors logical
-      if(has_backticks > 0){
-        treatment[i] <- stringr::str_c("`", treatment[i], "`")
+  if (is.null(treatment) == FALSE){
+    if(stringr::str_detect(treatment, "\\*")) { # for interactions. note as of now, doesn't show interaction in df
+      treatment <- unlist(stringr::str_split(treatment, "\\*"))
+      treatment <- unique(treatment)
+    }
+    for(i in 1:length(treatment)) {
+      has_backticks <- stringr::str_count(treatment[i], "`")
+      treatment[i] <- stringr::str_remove_all(treatment[i], "`") # necessary for running applys
+      # check for backticks factor
+      test <- try(lapply(data[,treatment[i]], class) == "factor", silent = T)
+      if (class(test) != "try-error"){
+        if (lapply(data[,treatment[i]], class) == "factor") { # if there are multiple representations e.g., factors logical, typeof(data[,treatment[i]])
+          treatment_factors <- stringr::str_c(treatment[i], sapply(data[,treatment[i]], levels)[-1])
+          treatment_factors <- treatment_factors[-length(treatment_factors)] # don't take last
+          if(has_backticks > 0){ # put them back
+            treatment_factors <- str_replace_all(treatment_factors, treatment[i], stringr::str_c("`", treatment[i], "`"))
+          }
+          treatment <- append(treatment, treatment_factors, after = i)
+          treatment <- setdiff(treatment, treatment[i])
+
+        } else if (sapply(data[,treatment[i]], class)[1] == "logical"){  # check for backticks in logical
+          if(has_backticks > 0){
+            treatment[i] <- stringr::str_c("`", treatment[i], "`")
+          }
+          treatment[i] <- stringr::str_c(treatment[i], "TRUE")
+        }
       }
-      treatment <- append(treatment, stringr::str_c(treatment[i], sapply(data[,treatment[i]], levels)[-1]), after = i)
-      treatment <- setdiff(treatment, treatment[i])
-    }, silent = TRUE)
-  try(
-    if (lapply(data[,treatment[i]], class) == "logical"){
-      if(has_backticks > 0){
-        treatment[i] <- stringr::str_c("`", treatment[i], "`")
-      }
-      treatment[i] <- stringr::str_c(treatment[i], "TRUE")
-    }, silent = TRUE)
-   })
+    }
+  }
   i = 1
+
+
+  # print treatment info
+
   if (is.null(treatment) == FALSE){
     for(i in 1:length(treatment)) {
 
@@ -427,40 +453,33 @@ tidy_lm <- function(data, dv, terms, treatment = NULL, style = "default", cluste
       j = 1
       for (j in 1:nrow(results)){
         take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
-          # if (length(take) == 0){
-          #   treatment[i] <- stringr::str_c(treatment[i], "TRUE")
-          #   take <- which(names(results[j, "lm"][[1]][[1]][[1]]) %in% treatment[i] == TRUE)
-          #   treatment[i] <- stringr::str_remove(treatment[i], "TRUE")
-          # }
 
+        try(lm_summary <- summary(results[j, "lm"][[1]][[1]]), silent = TRUE)
         ### get coeficients
         try(results[j, nam_coef] <- results[j, "lm"][[1]][[1]][[1]][take], silent = TRUE)
 
         ### get se
-        try(results[j, nam_se] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,2][take], silent = TRUE)
+        try(results[j, nam_se] <- lm_summary$coefficients[,2][take], silent = TRUE)
 
         ### get t
-        try(results[j, nam_t] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,3][take], silent = TRUE)
+        try(results[j, nam_t] <- lm_summary$coefficients[,3][take], silent = TRUE)
 
         ### get p values
-        try(results[j, nam_p] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,4][take], silent = TRUE)
+        try(results[j, nam_p] <- lm_summary$coefficients[,4][take], silent = TRUE)
 
         if(simple_model == FALSE){
           ### get ci low
-          try(results[j, nam_ci_low] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,5][take], silent = TRUE)
+          try(results[j, nam_ci_low] <- lm_summary$coefficients[,5][take], silent = TRUE)
           ### get ci upper
-          try(results[j, nam_ci_upper] <- summary(results[j, "lm"][[1]][[1]])$coefficients[,6][take], silent = TRUE)
+          try(results[j, nam_ci_upper] <- lm_summary$coefficients[,6][take], silent = TRUE)
         } else if(simple_model == TRUE){
           ### get ci low
           try(results[j, nam_ci_low] <- results[j, nam_coef] - results[j, nam_se]*2, silent = TRUE) ## not adapted for other CI yet
           ### get ci upper
           try(results[j, nam_ci_upper] <- results[j, nam_coef] + results[j, nam_se]*2, silent = TRUE) ## not adapted for other CI yet
-       }
+        }
+      }
     }
   }
-}
   results
 }
-
-#  tidy_lm(data = data, dv = c("mpg", "hp") , style = "default", terms = "cyl", treatment = "cyl", robust_se = FALSE, alpha = .05, print_summary = FALSE) %>% View
-
