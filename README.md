@@ -5,7 +5,7 @@ Betsy Levy Paluck Lab R Package
 This package is a collection of functions I wrote during my time as lab manager to facilitate transparent social science. This is a place where lab members can share code and functions they have written together, and learn how to contribute to open-source software.
 
 
-There are loosely two groups of functions that lab members will find most useful. The first is the workhorse `tidy_lm` function with support for running hierarchical regressions with support for cluster standard errors.
+There are loosely two groups of functions that lab members will find most useful. The first is the workhorse `tidy_lm` function with that runs hierarchical regressions with support for clustered standard errors.
 
 `tidy_lm` can supports multiple "styles" of models. These are:
 
