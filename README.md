@@ -49,7 +49,7 @@ y_2 ~ x_3
 ```
 
 
-The second are custom hacks for editing $\LaTeX$ to create publication quality tables. This is useful for editing tables created by `stargazer`, `knitr::kable` or `kableExtra`. These are numerous and mostly self-explanatory.
+The second are custom hacks for creating publication quality tables. This is useful for editing tables created by `stargazer`, `knitr::kable` or `kableExtra`. These are numerous and mostly self-explanatory.
 
 * `table_label` Adds dynamic labels to that can be references elsewhere in your .tex file or RMarkdown document via `\label{tab:your_label_here}`
 
