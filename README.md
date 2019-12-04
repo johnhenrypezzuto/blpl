@@ -25,7 +25,7 @@ y_2 ~ x_1 + x_2
 y_2 ~ x_1 + x_2 + x_3
 ```
 
-* "chord" begins by running a bivariate regression the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms. Lastly, all terms are ran together.
+* `chord` begins by running a bivariate regression the first term. Then runs a trivariate regression, holding the dv, first is term constant looping through the remaining terms. Lastly, all terms are ran together.
 
 ```
 y_1 ~ x_1
